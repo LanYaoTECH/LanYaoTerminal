@@ -94,3 +94,4 @@ ElectronRendererThread.js
 *.launch
 .settings/
 *.sublime-workspace
+*.code-workspace
