@@ -402,4 +402,3 @@ CREATE TABLE users (
 
 - 项目地址：https://github.com/yourusername/LanYaoTerminal
 - 问题反馈：https://github.com/yourusername/LanYaoTerminal/issues
-- 技术支持：support@lanyaoterminal.com
