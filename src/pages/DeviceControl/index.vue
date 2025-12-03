@@ -5,7 +5,7 @@
         <div class="card-header">
           <h2>设备控制</h2>
           <el-button type="primary" @click="refreshDevices">
-            <el-icon><i-ep-refresh /></el-icon>
+            <el-icon><Refresh /></el-icon>
             刷新设备列表
           </el-button>
         </div>
@@ -63,7 +63,7 @@
               <!-- 查看详情按钮 -->
               <div class="device-actions">
                 <el-button type="info" size="small" @click="viewDeviceDetails(device)">
-                  <el-icon><i-ep-view /></el-icon>
+                  <el-icon><View /></el-icon>
                   查看详情
                 </el-button>
               </div>
@@ -106,11 +106,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Refresh as RefreshIcon, View as ViewIcon } from '@element-plus/icons-vue'
-
-// 注册图标
-const iEpRefresh = RefreshIcon
-const iEpView = ViewIcon
+import { Refresh, View } from '@element-plus/icons-vue'
 
 // 设备列表
 const devices = ref([
@@ -163,13 +159,11 @@ const selectedDevice = ref<any>(null)
 
 // 刷新设备列表
 const refreshDevices = () => {
-  console.log('刷新设备列表')
   // 这里可以调用API获取最新设备列表
 }
 
 // 设备控制
 const handleDeviceControl = (device: any) => {
-  console.log('控制设备:', device)
   // 这里可以调用API发送控制指令
 }
 

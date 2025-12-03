@@ -11,23 +11,23 @@
         @select="handleMenuSelect"
       >
         <el-menu-item index="/device-control">
-          <el-icon><i-ep-device /></el-icon>
+          <el-icon><Monitor /></el-icon>
           <span>设备控制</span>
         </el-menu-item>
         <el-menu-item index="/device-manage">
-          <el-icon><i-ep-setting /></el-icon>
+          <el-icon><Setting /></el-icon>
           <span>设备管理</span>
         </el-menu-item>
         <el-menu-item index="/logs">
-          <el-icon><i-ep-document /></el-icon>
+          <el-icon><Document /></el-icon>
           <span>日志管理</span>
         </el-menu-item>
         <el-menu-item index="/gateway">
-          <el-icon><i-ep-connection /></el-icon>
+          <el-icon><Connection /></el-icon>
           <span>网关管理</span>
         </el-menu-item>
         <el-menu-item index="/user">
-          <el-icon><i-ep-user /></el-icon>
+          <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
       </el-menu>
@@ -36,12 +36,12 @@
       <div class="sidebar-user-info">
         <el-dropdown>
           <div class="user-info-content">
-            <el-icon class="user-icon"><i-ep-user-filled /></el-icon>
+            <el-icon class="user-icon"><UserFilled /></el-icon>
             <div class="user-details">
               <div class="username">{{ currentUser?.username || '未登录' }}</div>
               <div class="role">管理员</div>
             </div>
-            <el-icon class="arrow-icon"><i-ep-arrow-down /></el-icon>
+            <el-icon class="arrow-icon"><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -56,11 +56,11 @@
     <!-- 主内容区域 -->
     <el-container>
       <!-- 自定义标题栏（支持拖拽和窗口控制） -->
-      <div class="custom-titlebar" :class="{ 'sidebar-closed': !isSidebarOpen }">
+      <div class="custom-titlebar">
         <!-- 可拖拽区域 -->
         <div class="drag-area">
           <div class="titlebar-left" @click="toggleSidebar">
-            <el-icon><i-ep-menu /></el-icon>
+            <el-icon><Menu /></el-icon>
           </div>
           <div class="titlebar-center">
             <span class="current-page-title">{{ currentPageTitle }}</span>
@@ -70,14 +70,14 @@
         <!-- 窗口控制按钮 - 移到最右边 -->
         <div class="window-controls-right">
           <div class="control-btn minimize-btn" @click="handleMinimize">
-            <el-icon><i-ep-minus /></el-icon>
+            <el-icon><Minus /></el-icon>
           </div>
           <div class="control-btn maximize-btn" @click="handleMaximize">
-            <el-icon v-if="!isMaximized"><i-ep-full-screen /></el-icon>
-            <el-icon v-else><i-ep-crop /></el-icon>
+            <el-icon v-if="!isMaximized"><FullScreen /></el-icon>
+            <el-icon v-else><Crop /></el-icon>
           </div>
           <div class="control-btn close-btn" @click="handleClose">
-            <el-icon><i-ep-close /></el-icon>
+            <el-icon><Close /></el-icon>
           </div>
         </div>
       </div>
@@ -94,33 +94,19 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
-  Connection as ConnectionIcon, 
-  Monitor as DeviceIcon, 
-  Document as DocumentIcon, 
-  Menu as MenuIcon, 
-  Setting as SettingIcon, 
-  User as UserIcon, 
-  UserFilled as UserFilledIcon, 
-  ArrowDown as ArrowDownIcon, 
-  FullScreen as FullScreenIcon, 
-  Crop as CropIcon, 
-  Minus as MinusIcon, 
-  Close as CloseIcon 
+  Connection, 
+  Monitor, 
+  Document, 
+  Menu, 
+  Setting, 
+  User, 
+  UserFilled, 
+  ArrowDown, 
+  FullScreen, 
+  Crop, 
+  Minus, 
+  Close 
 } from '@element-plus/icons-vue'
-
-// 注册图标
-const iEpConnection = ConnectionIcon
-const iEpDevice = DeviceIcon
-const iEpDocument = DocumentIcon
-const iEpMenu = MenuIcon
-const iEpSetting = SettingIcon
-const iEpUser = UserIcon
-const iEpUserFilled = UserFilledIcon
-const iEpArrowDown = ArrowDownIcon
-const iEpFullScreen = FullScreenIcon
-const iEpCrop = CropIcon
-const iEpMinus = MinusIcon
-const iEpClose = CloseIcon
 
 // 路由
 const route = useRoute()
@@ -159,93 +145,47 @@ const handleMenuSelect = (index: string) => {
 
 // 窗口控制方法
 const handleMinimize = () => {
-  console.log('点击了最小化按钮')
   // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在')
-    if (window.electronAPI.minimizeWindow) {
-      console.log('调用window.electronAPI.minimizeWindow()')
-      window.electronAPI.minimizeWindow()
-    } else {
-      console.error('window.electronAPI.minimizeWindow不存在')
-    }
-  } else {
-    console.error('window.electronAPI不存在')
-  }
+  window.electronAPI?.minimizeWindow?.()
 }
 
 const handleMaximize = () => {
-  console.log('点击了最大化按钮')
   // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在')
-    if (window.electronAPI.maximizeWindow) {
-      console.log('调用window.electronAPI.maximizeWindow()')
-      window.electronAPI.maximizeWindow()
-      isMaximized.value = !isMaximized.value
-    } else {
-      console.error('window.electronAPI.maximizeWindow不存在')
-    }
-  } else {
-    console.error('window.electronAPI不存在')
-  }
+  window.electronAPI?.maximizeWindow?.()
+  isMaximized.value = !isMaximized.value
 }
 
 const handleClose = () => {
-  console.log('点击了关闭按钮')
   // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在')
-    if (window.electronAPI.closeWindow) {
-      console.log('调用window.electronAPI.closeWindow()')
-      window.electronAPI.closeWindow()
-    } else {
-      console.error('window.electronAPI.closeWindow不存在')
-    }
-  } else {
-    console.error('window.electronAPI不存在')
-  }
+  window.electronAPI?.closeWindow?.()
 }
 
 // 页面挂载时检查环境
 onMounted(() => {
-  console.log('App.vue挂载完成，检查window.electronAPI...')
-  console.log('window对象:', window)
-  console.log('window.electronAPI:', window.electronAPI)
   // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在，开始监听窗口状态事件')
+  const electronAPI = window.electronAPI
+  if (electronAPI) {
     // 监听窗口最大化
-    // @ts-ignore - electronAPI通过preload注入
-    window.electronAPI.onWindowMaximized(() => {
-      console.log('收到窗口最大化事件')
+    electronAPI.onWindowMaximized(() => {
       isMaximized.value = true
     })
     
     // 监听窗口取消最大化
-    // @ts-ignore - electronAPI通过preload注入
-    window.electronAPI.onWindowUnmaximized(() => {
-      console.log('收到窗口取消最大化事件')
+    electronAPI.onWindowUnmaximized(() => {
       isMaximized.value = false
     })
     
     // 监听窗口状态变化（初始化时）
-    // @ts-ignore - electronAPI通过preload注入
-    window.electronAPI.onWindowStateChanged((event: any, data: { maximized: boolean }) => {
-      console.log('收到窗口状态变化事件:', data)
+    electronAPI.onWindowStateChanged((_event: any, data: { maximized: boolean }) => {
       isMaximized.value = data.maximized
     })
-  } else {
-    console.error('window.electronAPI不存在，可能是preload脚本没有正确加载')
   }
 })
 
 // 组件卸载时移除事件监听
 onUnmounted(() => {
   // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI && window.electronAPI.removeWindowStateListener) {
-    window.electronAPI.removeWindowStateListener()
-  }
+  window.electronAPI?.removeWindowStateListener?.()
 })
 </script>
 
@@ -329,7 +269,6 @@ html, body {
   background-color: #fff;
   border-bottom: 1px solid #e8e8e8;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: padding-left 0.3s;
 }
 
 /* 拖拽区域 - 支持窗口拖拽 */
@@ -437,11 +376,7 @@ html, body {
   margin-left: 5px;
 }
 
-/* 侧边栏关闭时的样式调整 */
-.sidebar-closed .titlebar-left {
-  padding-left: 20px;
-}
-
+/* 内容区域样式 */
 .el-main {
   padding: 0 !important;
   overflow: hidden;
