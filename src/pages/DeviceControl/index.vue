@@ -1,26 +1,28 @@
 <template>
   <div class="device-control-page">
-    <el-card shadow="hover" class="page-card">
+    <a-card shadow="hover" class="page-card">
       <template #header>
         <div class="card-header">
           <h2>设备控制</h2>
-          <el-button type="primary" @click="refreshDevices">
-            <el-icon><i-ep-refresh /></el-icon>
+          <a-button type="primary" @click="refreshDevices">
+            <template #icon>
+              <icon name="refresh" />
+            </template>
             刷新设备列表
-          </el-button>
+          </a-button>
         </div>
       </template>
 
       <!-- 设备列表 -->
       <div class="device-list">
-        <el-row :gutter="20">
-          <el-col :span="8" v-for="device in devices" :key="device.id">
-            <el-card shadow="hover" class="device-card">
+        <a-row :gutter="20">
+          <a-col :span="8" v-for="device in devices" :key="device.id">
+            <a-card shadow="hover" class="device-card">
               <div class="device-header">
                 <h3>{{ device.name }}</h3>
-                <el-tag :type="device.online ? 'success' : 'danger'">
+                <a-tag :color="device.online ? 'green' : 'red'">
                   {{ device.online ? '在线' : '离线' }}
-                </el-tag>
+                </a-tag>
               </div>
               
               <div class="device-info">
@@ -30,27 +32,27 @@
 
               <!-- 开关型设备控制 -->
               <div v-if="device.type === 'light' || device.type === 'socket'" class="device-controls">
-                <el-switch
+                <a-switch
                   v-model="device.status"
                   :active-value="'on'"
                   :inactive-value="'off'"
                   @change="handleDeviceControl(device)"
                   :disabled="!device.online"
                 >
-                </el-switch>
+                </a-switch>
                 <span>{{ device.status === 'on' ? '开启' : '关闭' }}</span>
               </div>
 
               <!-- 调节型设备控制 -->
               <div v-else-if="device.type === 'air conditioner' || device.type === 'curtain'" class="device-controls">
-                <el-slider
+                <a-slider
                   v-model="device.params.brightness"
                   :min="0"
                   :max="100"
                   @change="handleDeviceControl(device)"
                   :disabled="!device.online"
                 >
-                </el-slider>
+                </a-slider>
                 <span>亮度: {{ device.params.brightness || 0 }}%</span>
               </div>
 
@@ -62,55 +64,53 @@
 
               <!-- 查看详情按钮 -->
               <div class="device-actions">
-                <el-button type="info" size="small" @click="viewDeviceDetails(device)">
-                  <el-icon><i-ep-view /></el-icon>
+                <a-button type="secondary" size="small" @click="viewDeviceDetails(device)">
+                  <template #icon>
+                    <icon name="eye" />
+                  </template>
                   查看详情
-                </el-button>
+                </a-button>
               </div>
-            </el-card>
-          </el-col>
-        </el-row>
+            </a-card>
+          </a-col>
+        </a-row>
       </div>
 
       <!-- 设备详情对话框 -->
-      <el-dialog
-        v-model="detailDialogVisible"
+      <a-modal
+        v-model:visible="detailDialogVisible"
         title="设备详情"
         width="50%"
       >
         <div v-if="selectedDevice" class="device-detail">
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="设备ID">{{ selectedDevice.id }}</el-descriptions-item>
-            <el-descriptions-item label="设备名称">{{ selectedDevice.name }}</el-descriptions-item>
-            <el-descriptions-item label="设备类型">{{ selectedDevice.type }}</el-descriptions-item>
-            <el-descriptions-item label="设备状态">{{ selectedDevice.status }}</el-descriptions-item>
-            <el-descriptions-item label="在线状态">
-              <el-tag :type="selectedDevice.online ? 'success' : 'danger'">
+          <a-descriptions :column="2" border>
+            <a-descriptions-item label="设备ID">{{ selectedDevice.id }}</a-descriptions-item>
+            <a-descriptions-item label="设备名称">{{ selectedDevice.name }}</a-descriptions-item>
+            <a-descriptions-item label="设备类型">{{ selectedDevice.type }}</a-descriptions-item>
+            <a-descriptions-item label="设备状态">{{ selectedDevice.status }}</a-descriptions-item>
+            <a-descriptions-item label="在线状态">
+              <a-tag :color="selectedDevice.online ? 'green' : 'red'">
                 {{ selectedDevice.online ? '在线' : '离线' }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="参数信息" :span="2">
+              </a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item label="参数信息" :span="2">
               <pre>{{ JSON.stringify(selectedDevice.params, null, 2) }}</pre>
-            </el-descriptions-item>
-          </el-descriptions>
+            </a-descriptions-item>
+          </a-descriptions>
         </div>
         <template #footer>
-          <span class="dialog-footer">
-            <el-button @click="detailDialogVisible = false">关闭</el-button>
-          </span>
+          <div class="dialog-footer">
+            <a-button @click="detailDialogVisible = false">关闭</a-button>
+          </div>
         </template>
-      </el-dialog>
-    </el-card>
+      </a-modal>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Refresh as RefreshIcon, View as ViewIcon } from '@element-plus/icons-vue'
-
-// 注册图标
-const iEpRefresh = RefreshIcon
-const iEpView = ViewIcon
+import Icon from '@arco-design/web-vue/es/icon'
 
 // 设备列表
 const devices = ref([

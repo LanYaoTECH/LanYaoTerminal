@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+import ArcoVue from '@arco-design/web-vue'
+import '@arco-design/web-vue/dist/arco.css'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
@@ -9,7 +9,7 @@ import router from './router'
 const app = createApp(App)
 
 // 注册插件
-app.use(ElementPlus)
+app.use(ArcoVue)
 app.use(createPinia())
 app.use(router)
 

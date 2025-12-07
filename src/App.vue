@@ -1,126 +1,93 @@
 <template>
   <div class="app-container">
     <!-- 侧边栏导航 -->
-    <el-aside width="200px" class="app-aside">
+    <a-layout-sider :width="200" class="app-aside" :collapsed="!isSidebarOpen" :collapsible="true" @collapse="isSidebarOpen = false" @expand="isSidebarOpen = true">
       <div class="logo">
         <h1>澜鳐控制终端</h1>
       </div>
-      <el-menu
-        :default-active="activeMenu"
-        class="el-menu-vertical-demo"
+      <a-menu
+        :default-selected-keys="[activeMenu]"
+        mode="vertical"
+        theme="dark"
         @select="handleMenuSelect"
       >
-        <el-menu-item index="/device-control">
-          <el-icon><i-ep-device /></el-icon>
+        <a-menu-item key="/device-control">
+          <template #icon>
+            <icon name="devices" />
+          </template>
           <span>设备控制</span>
-        </el-menu-item>
-        <el-menu-item index="/device-manage">
-          <el-icon><i-ep-setting /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/device-manage">
+          <template #icon>
+            <icon name="settings" />
+          </template>
           <span>设备管理</span>
-        </el-menu-item>
-        <el-menu-item index="/logs">
-          <el-icon><i-ep-document /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/logs">
+          <template #icon>
+            <icon name="file-text" />
+          </template>
           <span>日志管理</span>
-        </el-menu-item>
-        <el-menu-item index="/gateway">
-          <el-icon><i-ep-connection /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/gateway">
+          <template #icon>
+            <icon name="wifi" />
+          </template>
           <span>网关管理</span>
-        </el-menu-item>
-        <el-menu-item index="/user">
-          <el-icon><i-ep-user /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/user">
+          <template #icon>
+            <icon name="user" />
+          </template>
           <span>用户管理</span>
-        </el-menu-item>
-      </el-menu>
+        </a-menu-item>
+      </a-menu>
       
       <!-- 用户信息区域 -->
       <div class="sidebar-user-info">
-        <el-dropdown>
+        <a-dropdown>
           <div class="user-info-content">
-            <el-icon class="user-icon"><i-ep-user-filled /></el-icon>
+            <icon name="user" class="user-icon" />
             <div class="user-details">
               <div class="username">{{ currentUser?.username || '未登录' }}</div>
               <div class="role">管理员</div>
             </div>
-            <el-icon class="arrow-icon"><i-ep-arrow-down /></el-icon>
+            <icon name="down" class="arrow-icon" />
           </div>
           <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item>个人中心</el-dropdown-item>
-              <el-dropdown-item divided>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
+            <a-dropdown-menu>
+              <a-dropdown-item>个人中心</a-dropdown-item>
+              <a-dropdown-item divided>退出登录</a-dropdown-item>
+            </a-dropdown-menu>
           </template>
-        </el-dropdown>
+        </a-dropdown>
       </div>
-    </el-aside>
+    </a-layout-sider>
 
     <!-- 主内容区域 -->
-    <el-container>
-      <!-- 自定义标题栏（支持拖拽和窗口控制） -->
-      <div class="custom-titlebar" :class="{ 'sidebar-closed': !isSidebarOpen }">
-        <!-- 可拖拽区域 -->
-        <div class="drag-area">
-          <div class="titlebar-left" @click="toggleSidebar">
-            <el-icon><i-ep-menu /></el-icon>
-          </div>
-          <div class="titlebar-center">
-            <span class="current-page-title">{{ currentPageTitle }}</span>
-          </div>
+    <a-layout>
+      <!-- 自定义标题栏 -->
+      <a-layout-header class="custom-titlebar">
+        <div class="titlebar-left" @click="toggleSidebar">
+          <icon name="menu" />
         </div>
-        
-        <!-- 窗口控制按钮 - 移到最右边 -->
-        <div class="window-controls-right">
-          <div class="control-btn minimize-btn" @click="handleMinimize">
-            <el-icon><i-ep-minus /></el-icon>
-          </div>
-          <div class="control-btn maximize-btn" @click="handleMaximize">
-            <el-icon v-if="!isMaximized"><i-ep-full-screen /></el-icon>
-            <el-icon v-else><i-ep-crop /></el-icon>
-          </div>
-          <div class="control-btn close-btn" @click="handleClose">
-            <el-icon><i-ep-close /></el-icon>
-          </div>
+        <div class="titlebar-center">
+          <span class="current-page-title">{{ currentPageTitle }}</span>
         </div>
-      </div>
+      </a-layout-header>
 
       <!-- 内容区域 -->
-      <el-main class="app-main">
+      <a-layout-content class="app-main">
         <router-view />
-      </el-main>
-    </el-container>
+      </a-layout-content>
+    </a-layout>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { 
-  Connection as ConnectionIcon, 
-  Monitor as DeviceIcon, 
-  Document as DocumentIcon, 
-  Menu as MenuIcon, 
-  Setting as SettingIcon, 
-  User as UserIcon, 
-  UserFilled as UserFilledIcon, 
-  ArrowDown as ArrowDownIcon, 
-  FullScreen as FullScreenIcon, 
-  Crop as CropIcon, 
-  Minus as MinusIcon, 
-  Close as CloseIcon 
-} from '@element-plus/icons-vue'
-
-// 注册图标
-const iEpConnection = ConnectionIcon
-const iEpDevice = DeviceIcon
-const iEpDocument = DocumentIcon
-const iEpMenu = MenuIcon
-const iEpSetting = SettingIcon
-const iEpUser = UserIcon
-const iEpUserFilled = UserFilledIcon
-const iEpArrowDown = ArrowDownIcon
-const iEpFullScreen = FullScreenIcon
-const iEpCrop = CropIcon
-const iEpMinus = MinusIcon
-const iEpClose = CloseIcon
+import Icon from '@arco-design/web-vue/es/icon'
 
 // 路由
 const route = useRoute()
@@ -133,9 +100,6 @@ const isSidebarOpen = ref(true)
 const currentUser = ref({
   username: 'admin'
 })
-
-// 窗口状态
-const isMaximized = ref(false)
 
 // 计算当前激活的菜单
 const activeMenu = computed(() => {
@@ -153,100 +117,9 @@ const toggleSidebar = () => {
 }
 
 // 处理菜单选择
-const handleMenuSelect = (index: string) => {
-  router.push(index)
+const handleMenuSelect = (key: string) => {
+  router.push(key)
 }
-
-// 窗口控制方法
-const handleMinimize = () => {
-  console.log('点击了最小化按钮')
-  // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在')
-    if (window.electronAPI.minimizeWindow) {
-      console.log('调用window.electronAPI.minimizeWindow()')
-      window.electronAPI.minimizeWindow()
-    } else {
-      console.error('window.electronAPI.minimizeWindow不存在')
-    }
-  } else {
-    console.error('window.electronAPI不存在')
-  }
-}
-
-const handleMaximize = () => {
-  console.log('点击了最大化按钮')
-  // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在')
-    if (window.electronAPI.maximizeWindow) {
-      console.log('调用window.electronAPI.maximizeWindow()')
-      window.electronAPI.maximizeWindow()
-      isMaximized.value = !isMaximized.value
-    } else {
-      console.error('window.electronAPI.maximizeWindow不存在')
-    }
-  } else {
-    console.error('window.electronAPI不存在')
-  }
-}
-
-const handleClose = () => {
-  console.log('点击了关闭按钮')
-  // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在')
-    if (window.electronAPI.closeWindow) {
-      console.log('调用window.electronAPI.closeWindow()')
-      window.electronAPI.closeWindow()
-    } else {
-      console.error('window.electronAPI.closeWindow不存在')
-    }
-  } else {
-    console.error('window.electronAPI不存在')
-  }
-}
-
-// 页面挂载时检查环境
-onMounted(() => {
-  console.log('App.vue挂载完成，检查window.electronAPI...')
-  console.log('window对象:', window)
-  console.log('window.electronAPI:', window.electronAPI)
-  // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI) {
-    console.log('window.electronAPI存在，开始监听窗口状态事件')
-    // 监听窗口最大化
-    // @ts-ignore - electronAPI通过preload注入
-    window.electronAPI.onWindowMaximized(() => {
-      console.log('收到窗口最大化事件')
-      isMaximized.value = true
-    })
-    
-    // 监听窗口取消最大化
-    // @ts-ignore - electronAPI通过preload注入
-    window.electronAPI.onWindowUnmaximized(() => {
-      console.log('收到窗口取消最大化事件')
-      isMaximized.value = false
-    })
-    
-    // 监听窗口状态变化（初始化时）
-    // @ts-ignore - electronAPI通过preload注入
-    window.electronAPI.onWindowStateChanged((event: any, data: { maximized: boolean }) => {
-      console.log('收到窗口状态变化事件:', data)
-      isMaximized.value = data.maximized
-    })
-  } else {
-    console.error('window.electronAPI不存在，可能是preload脚本没有正确加载')
-  }
-})
-
-// 组件卸载时移除事件监听
-onUnmounted(() => {
-  // @ts-ignore - electronAPI通过preload注入
-  if (window.electronAPI && window.electronAPI.removeWindowStateListener) {
-    window.electronAPI.removeWindowStateListener()
-  }
-})
 </script>
 
 <style>
@@ -282,7 +155,6 @@ html, body {
   background-color: #001529;
   color: #fff;
   overflow-y: auto;
-  transition: width 0.3s;
   display: flex;
   flex-direction: column;
 }
@@ -299,28 +171,6 @@ html, body {
   font-weight: 600;
 }
 
-.el-menu-vertical-demo {
-  background-color: transparent;
-  border-right: none;
-}
-
-.el-menu-item {
-  color: #fff;
-}
-
-.el-menu-item.is-active {
-  background-color: #1890ff;
-}
-
-.el-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-  background-color: #f5f7fa;
-  width: 100%;
-}
-
 /* 自定义标题栏样式 */
 .custom-titlebar {
   display: flex;
@@ -329,21 +179,11 @@ html, body {
   background-color: #fff;
   border-bottom: 1px solid #e8e8e8;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: padding-left 0.3s;
-}
-
-/* 拖拽区域 - 支持窗口拖拽 */
-.drag-area {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  -webkit-app-region: drag;
-  height: 100%;
+  padding: 0 16px;
 }
 
 .titlebar-left {
-  padding: 0 16px;
-  -webkit-app-region: no-drag;
+  padding: 8px;
   cursor: pointer;
 }
 
@@ -356,33 +196,6 @@ html, body {
   font-size: 16px;
   font-weight: 500;
   color: #262626;
-}
-
-/* 窗口控制按钮 - 右侧布局 */
-.window-controls-right {
-  display: flex;
-  height: 100%;
-  margin-left: auto;
-}
-
-.control-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 100%;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-  transition: background-color 0.2s;
-}
-
-.control-btn:hover {
-  background-color: #f0f0f0;
-}
-
-.close-btn:hover {
-  background-color: #ff4d4f !important;
-  color: #fff;
 }
 
 /* 侧边栏用户信息样式 */
@@ -437,16 +250,7 @@ html, body {
   margin-left: 5px;
 }
 
-/* 侧边栏关闭时的样式调整 */
-.sidebar-closed .titlebar-left {
-  padding-left: 20px;
-}
-
-.el-main {
-  padding: 0 !important;
-  overflow: hidden;
-}
-
+/* 内容区域样式 */
 .app-main {
   padding: 20px;
   height: 100%;
