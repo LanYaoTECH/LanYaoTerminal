@@ -56,8 +56,8 @@ const Sidebar: React.FC = () => {
             <Settings className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">设备管理系统</h1>
-            <p className="text-sm text-muted-foreground">Device Manager</p>
+            <h1 className="text-lg font-bold text-foreground">澜鳐生物管理系统</h1>
+            <p className="text-sm text-muted-foreground">LanYao Device Manager</p>
           </div>
         </div>
       </div>
@@ -92,7 +92,7 @@ const Sidebar: React.FC = () => {
       <div className="p-4 border-t border-border">
         <div className="text-xs text-muted-foreground text-center">
           <p>版本 v1.0.0</p>
-          <p className="mt-1">© 2024 设备管理系统</p>
+          <p className="mt-1">© 2026 澜鳐生物管理系统</p>
         </div>
       </div>
     </aside>
