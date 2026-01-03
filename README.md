@@ -1,85 +1,73 @@
-# 澜鳐控制终端
+# React + TypeScript + Vite
 
-## 项目简介
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-澜鳐控制终端是一款基于 Electron + Vue 开发的桌面应用程序，用于连接澜鳐物联网网关，实现对各类物联网设备的集中控制与管理。支持纯局域网连接模式，无需公网，适用于无网络连接环境与实验室要求主机不得联网的保密环境。
+Currently, two official plugins are available:
 
-## 核心功能
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-- **设备管理**：添加、删除、编辑物联网设备
-- **设备控制**：实时控制设备开关、调节参数
-- **状态监控**：实时显示设备运行状态
-- **日志管理**：查看设备操作日志、系统日志
-- **网关管理**：连接、配置物联网网关
-- **用户管理**：多用户支持，权限控制
+## React Compiler
 
-## 快速开始
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### 开发环境搭建
+## Expanding the ESLint configuration
 
-1. 安装 Node.js（版本 >= 16.0.0）
-2. 克隆项目代码
-3. 安装依赖：
-   ```bash
-   npm install
-   ```
-4. 启动开发服务器：
-   ```bash
-   npm run dev
-   ```
-5. 启动 Electron 应用：
-   ```bash
-   npm run electron:dev
-   ```
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-### 构建流程
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-```bash
-# 构建 Vue 应用
-npm run build
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-# 打包 Electron 应用
-npm run electron:build
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-构建产物位于 `dist/` 目录
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-## 技术栈
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-- **主框架**：Electron ^25.0.0
-- **前端框架**：Vue.js ^3.3.0
-- **构建工具**：Vite ^4.4.0
-- **UI 组件库**：Element Plus ^2.3.0
-- **状态管理**：Pinia ^2.1.0
-- **路由管理**：Vue Router ^4.2.0
-- **数据库**：SQLite ^5.0.0
-
-## 项目结构
-
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-├── build/                    # 构建配置文件
-├── dist/                     # 构建输出目录
-├── electron/                 # Electron 主进程代码
-├── src/                      # Vue 渲染进程代码
-├── public/                   # 公共资源
-├── Docs.md                   # 详细技术文档
-└── package.json              # 项目依赖
-```
-
-## 详细文档
-
-请查看 [Docs.md](Docs.md) 获取完整的技术文档，包括：
-- 系统架构
-- 局域网连接机制
-- 开发规范
-- 部署与维护
-- 常见问题排查
-- API 文档
-- 数据库设计
-
-## 联系方式
-
-- 项目地址：https://github.com/yourusername/LanYaoTerminal
-- 问题反馈：https://github.com/yourusername/LanYaoTerminal/issues
-
-test

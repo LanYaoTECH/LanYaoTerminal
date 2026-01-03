@@ -1,0 +1,37 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "src": "src/pages/Dashboard.tsx"
+    },
+    {
+      "path": "/device-control",
+      "src": "src/pages/DeviceControl.tsx"
+    },
+    {
+      "path": "/device-management",
+      "src": "src/pages/DeviceManagement.tsx"
+    },
+    {
+      "path": "/logs",
+      "src": "src/pages/Logs.tsx"
+    },
+    {
+      "path": "/network-config",
+      "src": "src/pages/NetworkConfig.tsx"
+    },
+    {
+      "path": "/user-management",
+      "src": "src/pages/UserManagement.tsx"
+    }
+  ],
+  "components": [
+    {"name": "Sidebar", "src": "src/components/Sidebar.tsx"},
+    {"name": "Header", "src": "src/components/Header.tsx"},
+    {"name": "DeviceCard", "src": "src/components/DeviceCard.tsx"},
+    {"name": "DeviceChart", "src": "src/components/DeviceChart.tsx"},
+    {"name": "StatusBadge", "src": "src/components/StatusBadge.tsx"},
+    {"name": "DeviceSwitch", "src": "src/components/DeviceSwitch.tsx"},
+    {"name": "StatsCard", "src": "src/components/StatsCard.tsx"}
+  ]
+}
