@@ -114,7 +114,14 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    margin: 0; /* 移除浏览器默认8px边距 */
+    min-height: 100vh;
   }
+}
+
+/* 让布局100%铺满窗口 */
+html, body, #root {
+  height: 100%;
 }
 
 @layer utilities {

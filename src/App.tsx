@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import DeviceControl from "./pages/DeviceControl";
 import DeviceManagement from "./pages/DeviceManagement";
@@ -14,12 +14,15 @@ const queryClient = new QueryClient();
 const App = () => {
   console.log('设备管理系统启动');
   
+  const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
+  const Router = (isFileProtocol ? HashRouter : BrowserRouter) as any;
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <div className="flex min-h-screen bg-background">
-          {/* 固定宽度布局容器 */}
-          <div className="w-full max-w-[1440px] mx-auto flex">
+      <Router>
+        <div className="flex min-h-screen w-screen bg-background">
+          {/* 自适应宽度容器，去除固定最大宽度 */}
+          <div className="w-full flex">
             {/* 左侧导航栏 */}
             <Sidebar />
             
@@ -37,12 +40,14 @@ const App = () => {
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/network-config" element={<NetworkConfig />} />
                   <Route path="/user-management" element={<UserManagement />} />
+                  {/* 兜底：任何未知路径跳转到总览 */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </main>
             </div>
           </div>
         </div>
-      </BrowserRouter>
+      </Router>
     </QueryClientProvider>
   );
 };
