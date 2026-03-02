@@ -1,147 +1,186 @@
-import React from 'react';
-import { MonitorSpeaker, Zap, AlertTriangle, CheckCircle } from 'lucide-react';
+import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import { MonitorSpeaker, AlertTriangle, CheckCircle, Wifi, WifiOff } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import DeviceCard from '@/components/DeviceCard';
 import DeviceChart from '@/components/DeviceChart';
+import { useGateway } from '@/contexts/GatewayContext';
+import type { PumpStatus } from '@/types/device';
 
 const Dashboard: React.FC = () => {
-  console.log('主页面渲染');
+  const { devices, deviceStatuses, deviceConnections, connected } = useGateway();
   
-  // 模拟设备数据
-  const devices = [
-    {
-      id: 'dev-001',
-      name: '智能开关-001',
-      type: 'switch' as const,
-      status: 'online' as const,
-      isOn: true,
-      power: 120
-    },
-    {
-      id: 'dev-002', 
-      name: '离心机-A01',
-      type: 'centrifuge' as const,
-      status: 'online' as const,
-      isOn: true,
-      temperature: 25,
-      power: 450,
-      speed: 3000
-    },
-    {
-      id: 'dev-003',
-      name: '注射泵-P01',
-      type: 'pump' as const,
-      status: 'warning' as const,
-      isOn: false,
-      power: 80
-    },
-    {
-      id: 'dev-004',
-      name: '冰箱-R01', 
-      type: 'refrigerator' as const,
-      status: 'online' as const,
-      isOn: true,
-      temperature: 4,
-      humidity: 65,
-      power: 200
+  // Track speed history for chart
+  const [speedHistory, setSpeedHistory] = useState<Array<{ time: string; value: number }>>([]);
+  const historyRef = useRef(speedHistory);
+  historyRef.current = speedHistory;
+
+  // Update speed chart data from live statuses
+  const updateSpeedHistory = useCallback(() => {
+    const now = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    let totalSpeed = 0;
+    let motorCount = 0;
+    
+    for (const status of Object.values(deviceStatuses)) {
+      if (status && (status as PumpStatus).motors) {
+        for (const motor of (status as PumpStatus).motors) {
+          totalSpeed += Math.abs(motor.speed);
+          motorCount++;
+        }
+      }
     }
-  ];
-  
-  // 模拟图表数据
-  const temperatureData = [
-    { time: '00:00', value: 22 },
-    { time: '04:00', value: 21 },
-    { time: '08:00', value: 25 },
-    { time: '12:00', value: 28 },
-    { time: '16:00', value: 26 },
-    { time: '20:00', value: 24 }
-  ];
-  
-  const powerData = [
-    { time: '00:00', value: 850 },
-    { time: '04:00', value: 720 },
-    { time: '08:00', value: 980 },
-    { time: '12:00', value: 1200 },
-    { time: '16:00', value: 1100 },
-    { time: '20:00', value: 950 }
-  ];
-  
-  const handleDeviceToggle = (deviceId: string, isOn: boolean) => {
-    console.log(`设备 ${deviceId} 状态切换为：`, isOn);
-  };
-  
+
+    const avgSpeed = motorCount > 0 ? totalSpeed / motorCount : 0;
+    const prev = historyRef.current;
+    const next = [...prev, { time: now, value: Math.round(avgSpeed * 10) / 10 }].slice(-20);
+    setSpeedHistory(next);
+  }, [deviceStatuses]);
+
+  useEffect(() => {
+    const interval = setInterval(updateSpeedHistory, 2000);
+    return () => clearInterval(interval);
+  }, [updateSpeedHistory]);
+
+  // Compute real stats
+  const totalDevices = devices.length;
+  const onlineDevices = devices.filter((d) => deviceConnections[d.id]).length;
+  const offlineDevices = totalDevices - onlineDevices;
+
+  // Map devices to DeviceCard format
+  const deviceCards = useMemo(() => {
+    return devices.map((d) => {
+      const isConn = deviceConnections[d.id] ?? false;
+      const status = deviceStatuses[d.id] as PumpStatus | undefined;
+      const avgSpeed = status?.motors
+        ? status.motors.reduce((sum, m) => sum + Math.abs(m.speed), 0) / status.motors.length
+        : 0;
+
+      return {
+        id: d.id,
+        name: d.name,
+        type: 'pump' as const,
+        status: isConn ? ('online' as const) : ('offline' as const),
+        isOn: isConn && (status?.motors?.some((m) => m.state === 4) ?? false),
+        speed: Math.round(avgSpeed),
+      };
+    });
+  }, [devices, deviceConnections, deviceStatuses]);
+
+  // Position history (using motor positions)
+  const [posHistory, setPosHistory] = useState<Array<{ time: string; value: number }>>([]);
+  const posHistoryRef = useRef(posHistory);
+  posHistoryRef.current = posHistory;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      let totalPos = 0;
+      let count = 0;
+      for (const status of Object.values(deviceStatuses)) {
+        if (status && (status as PumpStatus).motors) {
+          for (const motor of (status as PumpStatus).motors) {
+            totalPos += Math.abs(motor.pos);
+            count++;
+          }
+        }
+      }
+      const avgPos = count > 0 ? totalPos / count : 0;
+      const prev = posHistoryRef.current;
+      const next = [...prev, { time: now, value: Math.round(avgPos) }].slice(-20);
+      setPosHistory(next);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [deviceStatuses]);
+
   return (
     <div className="p-6 space-y-6">
       {/* 页面标题 */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">设备总览</h1>
-        <p className="text-muted-foreground mt-1">实时监控所有设备状态和性能</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">设备总览</h1>
+          <p className="text-muted-foreground mt-1">实时监控所有设备状态和性能</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          {connected ? (
+            <Wifi className="w-5 h-5 text-green-500" />
+          ) : (
+            <WifiOff className="w-5 h-5 text-gray-400" />
+          )}
+          <span className={`text-sm ${connected ? 'text-green-600' : 'text-muted-foreground'}`}>
+            网关{connected ? '已连接' : '未连接'}
+          </span>
+        </div>
       </div>
       
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="总设备数"
-          value="24"
+          value={String(totalDevices)}
           icon={MonitorSpeaker}
-          trend="up"
-          trendValue="12%"
+          trend="stable"
+          trendValue={`${totalDevices} 台`}
           color="blue"
         />
         <StatsCard
           title="在线设备"
-          value="22"
+          value={String(onlineDevices)}
           icon={CheckCircle}
-          trend="up"
-          trendValue="8%"
+          trend={onlineDevices > 0 ? 'up' : 'stable'}
+          trendValue={totalDevices > 0 ? `${Math.round(onlineDevices / totalDevices * 100)}%` : '0%'}
           color="green"
         />
         <StatsCard
-          title="异常设备"
-          value="2"
+          title="离线设备"
+          value={String(offlineDevices)}
           icon={AlertTriangle}
-          trend="down"
-          trendValue="25%"
+          trend={offlineDevices > 0 ? 'down' : 'stable'}
+          trendValue={totalDevices > 0 ? `${Math.round(offlineDevices / totalDevices * 100)}%` : '0%'}
           color="red"
         />
         <StatsCard
-          title="总功耗"
-          value="2.8kW"
-          icon={Zap}
-          trend="stable"
-          trendValue="0%"
-          color="yellow"
+          title="网关状态"
+          value={connected ? '在线' : '离线'}
+          icon={connected ? Wifi : WifiOff}
+          trend={connected ? 'up' : 'down'}
+          trendValue={connected ? '正常' : '断开'}
+          color={connected ? 'green' : 'red'}
         />
       </div>
       
       {/* 图表区域 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DeviceChart
-          title="环境温度趋势"
-          data={temperatureData}
-          unit="°C"
-          color="#10b981"
+          title="平均电机转速"
+          data={speedHistory.length > 0 ? speedHistory : [{ time: '-', value: 0 }]}
+          unit="RPM"
+          color="#3b82f6"
         />
         <DeviceChart
-          title="系统功耗趋势"
-          data={powerData}
-          unit="W"
-          color="#f59e0b"
+          title="平均电机位置"
+          data={posHistory.length > 0 ? posHistory : [{ time: '-', value: 0 }]}
+          unit="pos"
+          color="#10b981"
         />
       </div>
       
       {/* 设备列表 */}
       <div>
         <h2 className="text-xl font-semibold text-foreground mb-4">设备状态</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {devices.map((device) => (
-            <DeviceCard
-              key={device.id}
-              device={device}
-              onToggle={handleDeviceToggle}
-            />
-          ))}
-        </div>
+        {deviceCards.length === 0 ? (
+          <div className="bg-card rounded-lg border border-border p-8 text-center">
+            <p className="text-muted-foreground">暂无设备，请在"设备管理"中添加</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {deviceCards.map((device) => (
+              <DeviceCard
+                key={device.id}
+                device={device}
+                onToggle={() => {}}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

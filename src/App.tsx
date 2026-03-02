@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { GatewayProvider } from "./contexts/GatewayContext";
 import Dashboard from "./pages/Dashboard";
 import DeviceControl from "./pages/DeviceControl";
 import DeviceManagement from "./pages/DeviceManagement";
@@ -20,6 +21,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <GatewayProvider>
         <div className="flex min-h-screen w-screen bg-background">
           {/* 自适应宽度容器，去除固定最大宽度 */}
           <div className="w-full flex">
@@ -47,6 +49,7 @@ const App = () => {
             </div>
           </div>
         </div>
+        </GatewayProvider>
       </Router>
     </QueryClientProvider>
   );
