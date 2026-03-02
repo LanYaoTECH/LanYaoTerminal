@@ -97,7 +97,7 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">设备总览</h1>
-          <p className="text-muted-foreground mt-1">实时监控所有设备状态和性能</p>
+          <p className="text-muted-foreground mt-1">设备状态监控</p>
         </div>
         <div className="flex items-center space-x-2">
           {connected ? (

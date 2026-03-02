@@ -1,5 +1,5 @@
 {
-  "name": "LanYaoTerminal",
+  "name": "raycore-terminal",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -61,8 +61,8 @@
     "vite": "^7.2.4"
   },
   "build": {
-    "appId": "com.lanyaoterminal.app",
-    "productName": "LanYao Terminal",
+    "appId": "com.raycore.terminal",
+    "productName": "RayCore Terminal",
     "directories": {
       "buildResources": "public"
     },

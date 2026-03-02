@@ -80,7 +80,7 @@ const NetworkConfig: React.FC = () => {
               className="w-full max-w-md px-3 py-2 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              填写 LanYao Gateway 后端服务的完整地址（包含端口号）
+              填写 RayCoreGateway 后端服务的完整地址（包含端口号）
             </p>
           </div>
 
@@ -114,7 +114,7 @@ const NetworkConfig: React.FC = () => {
       <div className="mt-6 bg-card rounded-lg border border-border p-6 shadow-custom">
         <h3 className="text-lg font-semibold text-foreground mb-4">使用说明</h3>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p>1. 确保 LanYao Gateway 后端服务已启动</p>
+          <p>1. 确保 RayCoreGateway 后端服务已启动</p>
           <p>2. 在上方输入网关服务地址（默认: http://localhost:3210）</p>
           <p>3. 点击"测试连接"验证连接是否正常</p>
           <p>4. 测试通过后点击"保存并重连"应用配置</p>

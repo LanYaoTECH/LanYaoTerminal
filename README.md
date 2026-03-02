@@ -1,8 +1,8 @@
-# LanYao Terminal
+# RayCore Terminal
 
-澜鳐生物管理系统 — 前端控制面板。
+RayCore Terminal — 澜鳐生物管理系统前端控制面板。
 
-Electron + React + TypeScript + Vite + TailwindCSS 桌面应用，配合 [LanYaoGateway](../LanYaoGateway) 后端实现泵设备的管理和控制。
+Electron + React + TypeScript + Vite + TailwindCSS 桌面应用，配合 [RayCore Gateway](../LanYaoGateway)（目录名：LanYaoGateway）实现泵设备的管理和控制。
 
 ## 功能概览
 
@@ -17,15 +17,15 @@ Electron + React + TypeScript + Vite + TailwindCSS 桌面应用，配合 [LanYao
 ## 系统架构
 
 ```
-LanYaoTerminal (Electron/React)
+RayCore Terminal (Electron/React)
   │  HTTP REST    ┌──────────────────┐  WebSocket   ┌──────────────┐
-  ├──────────────→│  LanYaoGateway   │─────────────→│  ESP32 泵    │
+  ├──────────────→│ RayCore Gateway  │─────────────→│  ESP32 泵    │
   │  WebSocket    │  (port 3210)     │←─────────────│  (ws://<IP>) │
   └──────────────→│                  │  Status Push  └──────────────┘
                   └──────────────────┘
 ```
 
-前端不直连泵设备，所有通信通过 LanYaoGateway 中转。
+前端不直连泵设备，所有通信通过 RayCore Gateway（LanYaoGateway）中转。
 
 ## 项目结构
 
@@ -77,7 +77,7 @@ src/
 
 - macOS（打包 DMG）
 - Node.js 18+（建议 20+）
-- LanYaoGateway 后端服务运行中（默认 `http://localhost:3210`）
+- RayCore Gateway（LanYaoGateway）后端服务运行中（默认 `http://localhost:3210`）
 
 ## 安装与运行
 
@@ -124,7 +124,7 @@ npx electron .
 ```bash
 ./build-electron.sh && npm run build:dmg
 ```
-输出文件位于：`dist/LanYao Terminal-<version>-arm64.dmg`
+输出文件位于：`dist/RayCore Terminal-<version>-arm64.dmg`
 
 说明：
 - `build-electron.sh`：使用 esbuild/tsc 编译主进程与预加载脚本
@@ -147,7 +147,7 @@ npx electron .
 - **白屏/资源 404**：确认 `vite.config.ts` 中 `base: './'` 存在，DevTools Network 检查 `./assets/...` 是否 200
 - **预加载脚本报错**：确认 `dist-electron/electron-preload.js` 为 CommonJS（`require('electron')`）
 - **路由丢失/空白**：打包环境使用 HashRouter，代码根据 `window.location.protocol === 'file:'` 自动切换
-- **网关连接失败**：确认 LanYaoGateway 已启动，网关地址配置正确
+- **网关连接失败**：确认 RayCore Gateway（LanYaoGateway）已启动，网关地址配置正确
 
 ## 代码签名与公证（可选）
 
