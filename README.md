@@ -1,36 +1,125 @@
 # LanYao Terminal
 
-Electron + React + TypeScript + Vite 桌面应用。
+澜鳐生物管理系统 — 前端控制面板。
 
-应用特性：
-- 打包为 macOS DMG（arm64）。
-- 生产构建使用相对资源路径（Vite `base: './'`）。
-- 打包环境下自动使用 Hash 路由；默认进入“设备总览”。
-- 预加载脚本使用 CommonJS（Electron 要求）。
-- 默认不打开开发者工具，菜单可手动切换。
+Electron + React + TypeScript + Vite + TailwindCSS 桌面应用，配合 [LanYaoGateway](../LanYaoGateway) 后端实现泵设备的管理和控制。
 
-## 环境要求
-- macOS（打包 DMG）
-- Node.js 18+（建议 20+）
+## 功能概览
 
-## 安装依赖
-```bash
-npm install
+| 页面 | 路径 | 说明 |
+|------|------|------|
+| **总览** | `/` | 实时统计卡片（总设备数/在线/离线/网关状态）、电机转速和位置趋势图、设备卡片列表 |
+| **设备控制** | `/device-control` | 完整泵控制面板：模式切换 (Raw/Period)、速度滑块、正转/停止/反转、位置定位、周期启停、校准、方向反转 |
+| **设备管理** | `/device-management` | 设备增删改表格，实时显示连接状态 |
+| **日志查看** | `/logs` | 分页展示操作日志，支持按设备和操作类型筛选 |
+| **网关配置** | `/network-config` | 配置网关地址、测试连接、保存并重连 |
+
+## 系统架构
+
+```
+LanYaoTerminal (Electron/React)
+  │  HTTP REST    ┌──────────────────┐  WebSocket   ┌──────────────┐
+  ├──────────────→│  LanYaoGateway   │─────────────→│  ESP32 泵    │
+  │  WebSocket    │  (port 3210)     │←─────────────│  (ws://<IP>) │
+  └──────────────→│                  │  Status Push  └──────────────┘
+                  └──────────────────┘
 ```
 
-## 开发调试
+前端不直连泵设备，所有通信通过 LanYaoGateway 中转。
+
+## 项目结构
+
+```
+src/
+├── App.tsx                        # 路由 + GatewayProvider
+├── main.tsx                       # 入口
+├── contexts/
+│   └── GatewayContext.tsx         # 全局设备状态 React Context
+├── services/
+│   ├── api.ts                     # HTTP 调用层（设备CRUD、日志、健康检查）
+│   └── websocket.ts               # Gateway WebSocket 客户端（实时状态推送）
+├── types/
+│   └── device.ts                  # 设备/电机/日志 TypeScript 类型 + 状态映射
+├── pages/
+│   ├── Dashboard.tsx              # 总览（实时图表 + 统计）
+│   ├── DeviceControl.tsx          # 泵控制（Raw + Period 模式）
+│   ├── DeviceManagement.tsx       # 设备增删改
+│   ├── Logs.tsx                   # 操作日志
+│   └── NetworkConfig.tsx          # 网关配置
+├── components/                    # 通用 UI 组件
+│   ├── Sidebar.tsx / Header.tsx
+│   ├── DeviceCard.tsx / DeviceChart.tsx / DeviceSwitch.tsx
+│   ├── StatsCard.tsx / StatusBadge.tsx
+│   └── ui/                        # shadcn/ui 组件
+├── hooks/
+│   └── use-mobile.ts
+└── lib/
+    └── utils.ts
+```
+
+## 泵控制功能
+
+### 直接控制模式 (Raw Mode)
+
+- **速度控制**：滑块设定速度 (0–3000 RPM) + 正转 / 停止 / 反转
+- **位置定位**：输入目标位置和速度，电机定位到指定位置
+- **CAN ID 重绑定**：动态修改电机 CAN 节点 ID
+
+### 周期模式 (Period Mode)
+
+- **速度设定**：周期速度滑块 (2–500 RPM)
+- **启停控制**：启动 / 停止周期往复运动
+- **实时状态**：当前周期、进度条、已完成周期数
+- **校准操作**：进入校准 → 设置 MIN → 设置 MAX
+- **方向反转**：每个电机独立反转开关
+
+## 环境要求
+
+- macOS（打包 DMG）
+- Node.js 18+（建议 20+）
+- LanYaoGateway 后端服务运行中（默认 `http://localhost:3210`）
+
+## 安装与运行
+
+```bash
+# 安装依赖
+npm install
+
+# 启动前端开发服务器
+npm run dev
+```
+
+网关地址可在"网关配置"页面修改，默认 `http://localhost:3210`。
+
+## 快速开始
+
+1. 启动后端：`cd ../LanYaoGateway && npm run dev`
+2. 启动前端：`npm run dev`
+3. 打开"网关配置"页面，确认连接正常
+4. 进入"设备管理"，添加泵设备（填写 ESP32 IP）
+5. 进入"设备控制"，选择设备进行操作
+6. 在"日志查看"中追踪所有操作记录
+
+## Electron 开发
+
 分两个终端运行：
 ```bash
 # 终端 1：启动前端 Vite 开发服务器
 npm run dev
 
-# 终端 2：启动 Electron（会在开发模式下加载 http://localhost:5173）
+# 终端 2：启动 Electron（开发模式加载 http://localhost:5173）
 npx electron .
 ```
 
-提示：主进程中使用了 `electron-is-dev` 来区分开发/生产；开发模式会自动打开 DevTools（如需可自行调整）。
+应用特性：
+- 打包为 macOS DMG（arm64）
+- 生产构建使用相对资源路径（Vite `base: './'`）
+- 打包环境下自动使用 Hash 路由
+- 预加载脚本使用 CommonJS（Electron 要求）
+- 默认不打开开发者工具，菜单可手动切换
 
 ## 生产打包（DMG）
+
 一键构建：
 ```bash
 ./build-electron.sh && npm run build:dmg
@@ -38,31 +127,28 @@ npx electron .
 输出文件位于：`dist/LanYao Terminal-<version>-arm64.dmg`
 
 说明：
-- `build-electron.sh`：使用 esbuild/tsc 编译主进程与预加载脚本。
-- `npm run build:vite`：构建前端到 `dist/`（已设置 `base: './'`）。
-- `electron-builder`：打包应用并生成 DMG。
+- `build-electron.sh`：使用 esbuild/tsc 编译主进程与预加载脚本
+- `npm run build:vite`：构建前端到 `dist/`（已设置 `base: './'`）
+- `electron-builder`：打包应用并生成 DMG
 
-## 目录与关键文件
-- 主进程：`electron-main.ts` → 构建后 `dist-electron/electron-main.js`
-- Preload：`electron-preload.ts`（CommonJS） → `dist-electron/electron-preload.js`
-- 前端入口：`index.html` + `src/main.tsx`
-- 生产资源：`dist/`
-- 打包配置：`package.json` 字段 `build`
+## 关键文件
+
+| 文件 | 说明 |
+|------|------|
+| `electron-main.ts` | Electron 主进程入口 → `dist-electron/electron-main.js` |
+| `electron-preload.ts` | 预加载脚本 (CommonJS) → `dist-electron/electron-preload.js` |
+| `index.html` + `src/main.tsx` | 前端入口 |
+| `src/contexts/GatewayContext.tsx` | 全局设备状态管理（WebSocket + 设备列表） |
+| `src/services/api.ts` | 网关 HTTP API 调用 |
+| `src/services/websocket.ts` | 网关 WebSocket 客户端 |
 
 ## 常见问题排查
-- 白屏/资源 404：
-  - 确认 `vite.config.ts` 中 `base: './'` 存在。
-  - 打开 DevTools Network，检查 `index.html` 中 `./assets/...` 是否 200。
-- 预加载脚本报错（import 语法错误）：
-  - 确认 `dist-electron/electron-preload.js` 为 CommonJS（`require('electron')`）。
-- 路由丢失/打开空白：
-  - 打包环境使用 HashRouter（代码中已根据 `window.location.protocol === 'file:'` 自动切换）。
-- 查看主进程日志：启动后 Console 会打印：
-  - `Loading URL: file:///.../app.asar/dist/index.html`
-  - `Preload: .../app.asar/dist-electron/electron-preload.js`
+
+- **白屏/资源 404**：确认 `vite.config.ts` 中 `base: './'` 存在，DevTools Network 检查 `./assets/...` 是否 200
+- **预加载脚本报错**：确认 `dist-electron/electron-preload.js` 为 CommonJS（`require('electron')`）
+- **路由丢失/空白**：打包环境使用 HashRouter，代码根据 `window.location.protocol === 'file:'` 自动切换
+- **网关连接失败**：确认 LanYaoGateway 已启动，网关地址配置正确
 
 ## 代码签名与公证（可选）
-当前使用 ad-hoc 签名，未进行 notarization。需要正式分发可在 `package.json` 的 `build` 字段中配置签名与公证信息。
 
----
-如需生成 Intel 或 Universal 包、添加应用图标、或自动化发布流程，我可以继续完善配置。
+当前使用 ad-hoc 签名，未进行 notarization。正式分发需在 `package.json` 的 `build` 字段中配置签名与公证信息。
