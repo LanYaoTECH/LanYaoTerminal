@@ -23,7 +23,7 @@ const App = () => {
       <Router>
         <GatewayProvider>
         <div className="flex min-h-screen w-screen bg-background">
-          {/* 自适应宽度容器，去除固定最大宽度 */}
+          {/* 自适应宽度容器 */}
           <div className="w-full flex">
             {/* 左侧导航栏 */}
             <Sidebar />
@@ -42,7 +42,7 @@ const App = () => {
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/network-config" element={<NetworkConfig />} />
                   <Route path="/user-management" element={<UserManagement />} />
-                  {/* 兜底：任何未知路径跳转到总览 */}
+                  {/* 任何未知路径跳转到总览 */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </main>

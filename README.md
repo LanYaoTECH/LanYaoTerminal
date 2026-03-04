@@ -1,14 +1,12 @@
-# RayCore Terminal
+# RayCore Terminal 鳐芯终端前端
 
-RayCore Terminal — 澜鳐生物管理系统前端控制面板。
-
-Electron + React + TypeScript + Vite + TailwindCSS 桌面应用，配合 [RayCore Gateway](../LanYaoGateway)（目录名：LanYaoGateway）实现泵设备的管理和控制。
+Electron + React + TypeScript + Vite + TailwindCSS 桌面应用，配合RayCore Gateway实现设备的管理和控制。
 
 ## 功能概览
 
 | 页面 | 路径 | 说明 |
 |------|------|------|
-| **总览** | `/` | 实时统计卡片（总设备数/在线/离线/网关状态）、电机转速和位置趋势图、设备卡片列表 |
+| **总览** | `/` | 实时统计卡片（总设备数/在线/离线/网关状态）、设备卡片列表 |
 | **设备控制** | `/device-control` | 完整泵控制面板：模式切换 (Raw/Period)、速度滑块、正转/停止/反转、位置定位、周期启停、校准、方向反转 |
 | **设备管理** | `/device-management` | 设备增删改表格，实时显示连接状态 |
 | **日志查看** | `/logs` | 分页展示操作日志，支持按设备和操作类型筛选 |
@@ -73,12 +71,6 @@ src/
 - **校准操作**：进入校准 → 设置 MIN → 设置 MAX
 - **方向反转**：每个电机独立反转开关
 
-## 环境要求
-
-- macOS（打包 DMG）
-- Node.js 18+（建议 20+）
-- RayCore Gateway（LanYaoGateway）后端服务运行中（默认 `http://localhost:3210`）
-
 ## 安装与运行
 
 ```bash
@@ -89,7 +81,7 @@ npm install
 npm run dev
 ```
 
-网关地址可在"网关配置"页面修改，默认 `http://localhost:3210`。
+>网关地址可在"网关配置"页面修改，默认 `http://localhost:3210`。
 
 ## 快速开始
 
@@ -136,9 +128,9 @@ npx electron .
 | 文件 | 说明 |
 |------|------|
 | `electron-main.ts` | Electron 主进程入口 → `dist-electron/electron-main.js` |
-| `electron-preload.ts` | 预加载脚本 (CommonJS) → `dist-electron/electron-preload.js` |
+| `electron-preload.ts` | 预加载脚本 → `dist-electron/electron-preload.js` |
 | `index.html` + `src/main.tsx` | 前端入口 |
-| `src/contexts/GatewayContext.tsx` | 全局设备状态管理（WebSocket + 设备列表） |
+| `src/contexts/GatewayContext.tsx` | 全局设备状态管理 |
 | `src/services/api.ts` | 网关 HTTP API 调用 |
 | `src/services/websocket.ts` | 网关 WebSocket 客户端 |
 
@@ -148,7 +140,3 @@ npx electron .
 - **预加载脚本报错**：确认 `dist-electron/electron-preload.js` 为 CommonJS（`require('electron')`）
 - **路由丢失/空白**：打包环境使用 HashRouter，代码根据 `window.location.protocol === 'file:'` 自动切换
 - **网关连接失败**：确认 RayCore Gateway（LanYaoGateway）已启动，网关地址配置正确
-
-## 代码签名与公证（可选）
-
-当前使用 ad-hoc 签名，未进行 notarization。正式分发需在 `package.json` 的 `build` 字段中配置签名与公证信息。
