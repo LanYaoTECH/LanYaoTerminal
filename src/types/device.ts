@@ -32,12 +32,22 @@ export interface MotorStatus {
   direction_inverted: boolean;
 }
 
+export interface KeyFrame {
+  t_ms: number;   // 时间（毫秒）
+  speed: number;  // 速度（RPM）
+}
+
 export interface PeriodStatus {
   enabled: boolean;
   current_cycle: number;
   cycle_progress: number;
   speed_a: number;
   cycles_completed: number;
+  elapsed_ms: number;
+  target_duration_ms: number;   // 0=无限
+  interpolated_speed: number;
+  active_keyframe: number;      // 当前处于第几个关键帧段（0-based）
+  kf_count: number;
 }
 
 export interface PumpStatus {

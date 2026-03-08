@@ -3,6 +3,8 @@ import { gatewayWs } from '../services/websocket';
 import { fetchDevices } from '../services/api';
 import type { Device, PumpStatus } from '../types/device';
 
+type AutoDetectCallback = (deviceId: string) => void;
+
 interface GatewayContextValue {
   connected: boolean;
   devices: Device[];
@@ -10,6 +12,7 @@ interface GatewayContextValue {
   deviceConnections: Record<string, boolean>;
   refreshDevices: () => Promise<void>;
   sendCommand: (deviceId: string, payload: Record<string, unknown>) => void;
+  onAutoDetectPeriod: (cb: AutoDetectCallback) => () => void;
   loading: boolean;
   error: string | null;
 }
@@ -24,6 +27,14 @@ export const GatewayProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const subscribedRef = useRef<Set<string>>(new Set());
+  // Track which device IDs have already fired the auto-detect callback
+  const autoDetectedRef = useRef<Set<string>>(new Set());
+  const autoDetectCallbacksRef = useRef<Set<AutoDetectCallback>>(new Set());
+
+  const onAutoDetectPeriod = useCallback((cb: AutoDetectCallback) => {
+    autoDetectCallbacksRef.current.add(cb);
+    return () => { autoDetectCallbacksRef.current.delete(cb); };
+  }, []);
 
   const refreshDevices = useCallback(async () => {
     try {
@@ -74,10 +85,18 @@ export const GatewayProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const unsubStatus = gatewayWs.onDeviceStatus((deviceId, data) => {
       setDeviceStatuses((prev) => ({ ...prev, [deviceId]: data }));
+
+      // Auto-detect period mode on first status message per device
+      if (data?.mode === 'period' && !autoDetectedRef.current.has(deviceId)) {
+        autoDetectedRef.current.add(deviceId);
+        autoDetectCallbacksRef.current.forEach((cb) => cb(deviceId));
+      }
     });
 
     const unsubConn = gatewayWs.onDeviceConnection((deviceId, conn) => {
       setDeviceConnections((prev) => ({ ...prev, [deviceId]: conn }));
+      // Reset auto-detect flag on reconnect so it fires again if needed
+      if (!conn) autoDetectedRef.current.delete(deviceId);
     });
 
     gatewayWs.connect();
@@ -100,6 +119,7 @@ export const GatewayProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deviceConnections,
         refreshDevices,
         sendCommand,
+        onAutoDetectPeriod,
         loading,
         error,
       }}

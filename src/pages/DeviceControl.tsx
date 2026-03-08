@@ -1,26 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Droplets, RotateCcw, Play, Square, ArrowUp, ArrowDown,
-  Gauge, Target, Compass, AlertTriangle, Settings2
+  Gauge, Target, Compass, AlertTriangle, Settings2, Clock, TrendingUp
 } from 'lucide-react';
 import { useGateway } from '@/contexts/GatewayContext';
 import StatusBadge from '@/components/StatusBadge';
+import SpeedCurveEditor from '@/components/SpeedCurveEditor';
 import { getMotorStateLabel, getMotorStateColor, formatUptime } from '@/types/device';
-import type { PumpStatus, MotorStatus } from '@/types/device';
+import type { PumpStatus, MotorStatus, KeyFrame } from '@/types/device';
+
+function formatDuration(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 const DeviceControl: React.FC = () => {
-  const { devices, deviceStatuses, deviceConnections, sendCommand } = useGateway();
+  const { devices, deviceStatuses, deviceConnections, sendCommand, onAutoDetectPeriod } = useGateway();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [speeds, setSpeeds] = useState<Record<string, number>>({});
   const [positions, setPositions] = useState<Record<string, number>>({});
   const [positionSpeeds, setPositionSpeeds] = useState<Record<string, number>>({});
   const [periodSpeed, setPeriodSpeed] = useState(100);
+  const [keyframes, setKeyframes] = useState<KeyFrame[]>([]);
+  const [durationValue, setDurationValue] = useState('');
+  const [durationUnit, setDurationUnit] = useState<'min' | 'hour'>('min');
+
+  // Computed total duration in ms
+  const durationMs = durationValue
+    ? Math.round(parseFloat(durationValue) * (durationUnit === 'hour' ? 3600000 : 60000))
+    : 0;
 
   // If no device selected, select the first one
   const activeDeviceId = selectedDeviceId || devices[0]?.id || null;
   const activeDevice = devices.find((d) => d.id === activeDeviceId);
   const status: PumpStatus | null = activeDeviceId ? (deviceStatuses[activeDeviceId] as PumpStatus | null) : null;
   const isConnected = activeDeviceId ? (deviceConnections[activeDeviceId] ?? false) : false;
+
+  // Auto-detect: switch to period mode view when device is already running period
+  useEffect(() => {
+    return onAutoDetectPeriod((deviceId) => {
+      if (deviceId === activeDeviceId || !activeDeviceId) {
+        // Already in period mode, nothing to switch in this simplified UI
+      }
+    });
+  }, [onAutoDetectPeriod, activeDeviceId]);
 
   const send = (payload: Record<string, unknown>) => {
     if (activeDeviceId) sendCommand(activeDeviceId, payload);
@@ -49,9 +76,28 @@ const DeviceControl: React.FC = () => {
 
   const handlePeriodControl = (action: 'start' | 'stop') => {
     if (action === 'start') {
-      send({ cmd: 'period_control', action: 'start', speed_a: periodSpeed });
+      send({
+        cmd: 'period_control',
+        action: 'start',
+        speed_a: periodSpeed,
+        duration_ms: durationMs > 0 ? durationMs : undefined,
+        keyframes: keyframes.length > 0 ? keyframes : undefined,
+      });
     } else {
       send({ cmd: 'period_control', action: 'stop' });
+    }
+  };
+
+  // Called when SpeedCurveEditor's Apply is clicked.
+  // If already running, immediately push updated keyframes to device.
+  const handleKeyframesChange = (kfs: KeyFrame[]) => {
+    setKeyframes(kfs);
+    if (periodRunning && activeDeviceId) {
+      sendCommand(activeDeviceId, {
+        cmd: 'period_control',
+        action: 'update_keyframes',
+        keyframes: kfs,
+      });
     }
   };
 
@@ -66,6 +112,8 @@ const DeviceControl: React.FC = () => {
   const handleRebind = (mIdx: number, canId: number) => {
     send({ cmd: 'bind', m_idx: mIdx, can_id: canId });
   };
+
+  const periodRunning = status?.period?.enabled ?? false;
 
   const renderMotorCard = (motor: MotorStatus, idx: number) => {
     const key = getSpeedKey(idx);
@@ -377,9 +425,10 @@ const DeviceControl: React.FC = () => {
                   {/* Period Mode Controls */}
                   {status.mode === 'period' && (
                     <div className="space-y-4">
+                      {/* Base speed */}
                       <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                          周期速度 A: {periodSpeed} RPM
+                          基础速度 (speed_a): {periodSpeed} RPM
                         </label>
                         <input
                           type="range"
@@ -387,14 +436,63 @@ const DeviceControl: React.FC = () => {
                           max="500"
                           value={periodSpeed}
                           onChange={(e) => setPeriodSpeed(parseInt(e.target.value))}
-                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                          disabled={periodRunning}
+                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
                         />
                       </div>
 
-                      <div className="flex space-x-3">
+                      {/* Duration input */}
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-2 block flex items-center space-x-1">
+                          <Clock className="w-4 h-4" />
+                          <span>运行总时长（留空=无限）</span>
+                        </label>
+                        <div className="flex space-x-2">
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={durationValue}
+                            onChange={(e) => setDurationValue(e.target.value)}
+                            disabled={periodRunning}
+                            placeholder="时长数值"
+                            className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                          />
+                          <select
+                            value={durationUnit}
+                            onChange={(e) => setDurationUnit(e.target.value as 'min' | 'hour')}
+                            disabled={periodRunning}
+                            className="px-3 py-2 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                          >
+                            <option value="min">分钟</option>
+                            <option value="hour">小时</option>
+                          </select>
+                        </div>
+                        {durationMs > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">= {formatDuration(durationMs)}</p>
+                        )}
+                      </div>
+
+                      {/* Speed Curve Editor */}
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-2 block flex items-center space-x-1">
+                          <TrendingUp className="w-4 h-4" />
+                          <span>速度曲线关键帧（点击曲线区域添加）</span>
+                        </label>
+                        <SpeedCurveEditor
+                          keyframes={keyframes}
+                          onChange={handleKeyframesChange}
+                          durationMs={periodRunning ? (status.period?.target_duration_ms ?? durationMs) : durationMs}
+                          baseSpeed={periodSpeed}
+                          elapsedMs={periodRunning ? (status.period?.elapsed_ms ?? 0) : 0}
+                        />
+                      </div>
+
+                      {/* Start / Stop buttons */}
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handlePeriodControl('start')}
-                          disabled={status.period?.enabled}
+                          disabled={periodRunning}
                           className="flex items-center space-x-2 px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
                         >
                           <Play className="w-4 h-4" />
@@ -402,7 +500,7 @@ const DeviceControl: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handlePeriodControl('stop')}
-                          disabled={!status.period?.enabled}
+                          disabled={!periodRunning}
                           className="flex items-center space-x-2 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
                         >
                           <Square className="w-4 h-4" />
@@ -410,40 +508,72 @@ const DeviceControl: React.FC = () => {
                         </button>
                       </div>
 
-                      {/* Period Status */}
+                      {/* Period running status */}
                       {status.period && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                          <div className="bg-muted rounded-lg p-3">
-                            <p className="text-xs text-muted-foreground">状态</p>
-                            <p className="text-sm font-medium text-foreground">
-                              {status.period.enabled ? '运行中' : '停止'}
-                            </p>
-                          </div>
-                          <div className="bg-muted rounded-lg p-3">
-                            <p className="text-xs text-muted-foreground">当前周期</p>
-                            <p className="text-sm font-medium text-foreground">
-                              Cycle {status.period.current_cycle}
-                            </p>
-                          </div>
-                          <div className="bg-muted rounded-lg p-3">
-                            <p className="text-xs text-muted-foreground">进度</p>
-                            <div className="mt-1">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-primary h-2 rounded-full transition-all"
-                                  style={{ width: `${(status.period.cycle_progress * 100).toFixed(0)}%` }}
-                                />
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {(status.period.cycle_progress * 100).toFixed(1)}%
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-muted rounded-lg p-3">
+                              <p className="text-xs text-muted-foreground">状态</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {status.period.enabled ? '运行中' : '停止'}
+                              </p>
+                            </div>
+                            <div className="bg-muted rounded-lg p-3">
+                              <p className="text-xs text-muted-foreground">当前速度</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {status.period.interpolated_speed?.toFixed(1) ?? status.period.speed_a.toFixed(1)} RPM
+                              </p>
+                            </div>
+                            <div className="bg-muted rounded-lg p-3">
+                              <p className="text-xs text-muted-foreground">已运行 / 总时长</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {formatDuration(status.period.elapsed_ms ?? 0)}
+                                {status.period.target_duration_ms > 0
+                                  ? ` / ${formatDuration(status.period.target_duration_ms)}`
+                                  : ' / ∞'}
+                              </p>
+                            </div>
+                            <div className="bg-muted rounded-lg p-3">
+                              <p className="text-xs text-muted-foreground">关键帧段</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {status.period.kf_count > 0
+                                  ? `第 ${(status.period.active_keyframe ?? 0) + 1} 段 / 共 ${status.period.kf_count} 个`
+                                  : '单速模式'}
                               </p>
                             </div>
                           </div>
-                          <div className="bg-muted rounded-lg p-3">
-                            <p className="text-xs text-muted-foreground">已完成周期</p>
-                            <p className="text-sm font-medium text-foreground">
-                              {status.period.cycles_completed}
-                            </p>
+
+                          {/* Time progress bar */}
+                          {status.period.target_duration_ms > 0 && (
+                            <div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full transition-all"
+                                  style={{
+                                    width: `${Math.min(100, ((status.period.elapsed_ms ?? 0) / status.period.target_duration_ms) * 100).toFixed(1)}%`
+                                  }}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                剩余 {formatDuration(Math.max(0, status.period.target_duration_ms - (status.period.elapsed_ms ?? 0)))}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Cycle info */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-muted rounded-lg p-3">
+                              <p className="text-xs text-muted-foreground">当前周期</p>
+                              <p className="text-sm font-medium text-foreground">
+                                Cycle {status.period.current_cycle}
+                              </p>
+                            </div>
+                            <div className="bg-muted rounded-lg p-3">
+                              <p className="text-xs text-muted-foreground">已完成周期</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {status.period.cycles_completed}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       )}
