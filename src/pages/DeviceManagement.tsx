@@ -3,17 +3,21 @@ import { Plus, Trash2, Edit, Wifi, WifiOff, X, Check } from 'lucide-react';
 import { useGateway } from '@/contexts/GatewayContext';
 import { createDevice, deleteDevice, updateDevice } from '@/services/api';
 import StatusBadge from '@/components/StatusBadge';
+import { getDeviceTypeLabel } from '@/types/device';
+import type { DeviceType } from '@/types/device';
 
 const DeviceManagement: React.FC = () => {
   const { devices, deviceConnections, refreshDevices } = useGateway();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', ip: '', port: '80' });
+  const [formData, setFormData] = useState<{ name: string; ip: string; port: string; type: DeviceType }>({
+    name: '', ip: '', port: '80', type: 'pump',
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
-    setFormData({ name: '', ip: '', port: '80' });
+    setFormData({ name: '', ip: '', port: '80', type: 'pump' });
     setShowAddForm(false);
     setEditingId(null);
     setError(null);
@@ -29,7 +33,7 @@ const DeviceManagement: React.FC = () => {
     try {
       await createDevice({
         name: formData.name.trim(),
-        type: 'pump',
+        type: formData.type,
         ip: formData.ip.trim(),
         port: parseInt(formData.port) || 80,
       });
@@ -54,7 +58,7 @@ const DeviceManagement: React.FC = () => {
 
   const handleStartEdit = (device: typeof devices[0]) => {
     setEditingId(device.id);
-    setFormData({ name: device.name, ip: device.ip, port: String(device.port) });
+    setFormData({ name: device.name, ip: device.ip, port: String(device.port), type: device.type });
   };
 
   const handleSaveEdit = async () => {
@@ -103,14 +107,25 @@ const DeviceManagement: React.FC = () => {
       {showAddForm && (
         <div className="mb-6 bg-card rounded-lg border border-border p-6 shadow-custom">
           <h3 className="text-lg font-semibold text-foreground mb-4">添加新设备</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">设备类型</label>
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as DeviceType })}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="pump">注射泵</option>
+                <option value="treadmill">跑步机</option>
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1">设备名称</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="例: 注射泵-P01"
+                placeholder={formData.type === 'treadmill' ? '例: 跑步机-T01' : '例: 注射泵-P01'}
                 className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -195,7 +210,7 @@ const DeviceManagement: React.FC = () => {
                       )}
                     </td>
                     <td className="p-4">
-                      <span className="text-sm text-muted-foreground">注射泵</span>
+                      <span className="text-sm text-muted-foreground">{getDeviceTypeLabel(device.type)}</span>
                     </td>
                     <td className="p-4">
                       {isEditing ? (

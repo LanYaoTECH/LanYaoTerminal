@@ -6,7 +6,8 @@ import {
   FileText, 
   Network, 
   Users, 
-  Home
+  Home,
+  Activity
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
@@ -22,8 +23,13 @@ const Sidebar: React.FC = () => {
     },
     {
       path: '/device-control',
-      label: '设备控制',
+      label: '注射泵控制',
       icon: Settings
+    },
+    {
+      path: '/treadmill-control',
+      label: '跑步机控制',
+      icon: Activity
     },
     {
       path: '/device-management',

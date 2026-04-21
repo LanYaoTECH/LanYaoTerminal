@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { gatewayWs } from '../services/websocket';
 import { fetchDevices } from '../services/api';
-import type { Device, PumpStatus } from '../types/device';
+import type { Device, DeviceStatus, PumpStatus } from '../types/device';
+import { isPumpStatus } from '../types/device';
 
 type AutoDetectCallback = (deviceId: string) => void;
 
 interface GatewayContextValue {
   connected: boolean;
   devices: Device[];
-  deviceStatuses: Record<string, PumpStatus | null>;
+  deviceStatuses: Record<string, DeviceStatus | null>;
   deviceConnections: Record<string, boolean>;
   refreshDevices: () => Promise<void>;
   sendCommand: (deviceId: string, payload: Record<string, unknown>) => void;
@@ -22,7 +23,7 @@ const GatewayContext = createContext<GatewayContextValue | null>(null);
 export const GatewayProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [devices, setDevices] = useState<Device[]>([]);
-  const [deviceStatuses, setDeviceStatuses] = useState<Record<string, PumpStatus | null>>({});
+  const [deviceStatuses, setDeviceStatuses] = useState<Record<string, DeviceStatus | null>>({});
   const [deviceConnections, setDeviceConnections] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,8 +87,9 @@ export const GatewayProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubStatus = gatewayWs.onDeviceStatus((deviceId, data) => {
       setDeviceStatuses((prev) => ({ ...prev, [deviceId]: data }));
 
-      // Auto-detect period mode on first status message per device
-      if (data?.mode === 'period' && !autoDetectedRef.current.has(deviceId)) {
+      // Auto-detect period mode on first status message per device (pump only)
+      if (isPumpStatus(data) && (data as PumpStatus).mode === 'period'
+          && !autoDetectedRef.current.has(deviceId)) {
         autoDetectedRef.current.add(deviceId);
         autoDetectCallbacksRef.current.forEach((cb) => cb(deviceId));
       }

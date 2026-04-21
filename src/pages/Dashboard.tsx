@@ -4,7 +4,8 @@ import StatsCard from '@/components/StatsCard';
 import DeviceCard from '@/components/DeviceCard';
 import DeviceChart from '@/components/DeviceChart';
 import { useGateway } from '@/contexts/GatewayContext';
-import type { PumpStatus } from '@/types/device';
+import type { PumpStatus, TreadmillStatus } from '@/types/device';
+import { isPumpStatus, isTreadmillStatus } from '@/types/device';
 
 const Dashboard: React.FC = () => {
   const { devices, deviceStatuses, deviceConnections, connected } = useGateway();
@@ -49,7 +50,22 @@ const Dashboard: React.FC = () => {
   const deviceCards = useMemo(() => {
     return devices.map((d) => {
       const isConn = deviceConnections[d.id] ?? false;
-      const status = deviceStatuses[d.id] as PumpStatus | undefined;
+      const rawStatus = deviceStatuses[d.id] ?? undefined;
+
+      if (d.type === 'treadmill') {
+        const tm = isTreadmillStatus(rawStatus) ? (rawStatus as TreadmillStatus) : undefined;
+        return {
+          id: d.id,
+          name: d.name,
+          type: 'treadmill' as const,
+          status: isConn ? ('online' as const) : ('offline' as const),
+          isOn: isConn && tm?.state === 'running',
+          speedMps: tm?.runtime.cur_speed_mps ?? 0,
+          distance: tm?.runtime.distance_m ?? 0,
+        };
+      }
+
+      const status = isPumpStatus(rawStatus) ? (rawStatus as PumpStatus) : undefined;
       const avgSpeed = status?.motors
         ? status.motors.reduce((sum, m) => sum + Math.abs(m.speed), 0) / status.motors.length
         : 0;

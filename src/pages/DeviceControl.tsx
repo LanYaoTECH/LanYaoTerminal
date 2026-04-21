@@ -19,7 +19,9 @@ function formatDuration(ms: number): string {
 }
 
 const DeviceControl: React.FC = () => {
-  const { devices, deviceStatuses, deviceConnections, sendCommand, onAutoDetectPeriod } = useGateway();
+  const { devices: allDevices, deviceStatuses, deviceConnections, sendCommand, onAutoDetectPeriod } = useGateway();
+  // Only show pump devices here; treadmills live in /treadmill-control
+  const devices = allDevices.filter((d) => d.type === 'pump');
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [speeds, setSpeeds] = useState<Record<string, number>>({});
   const [positions, setPositions] = useState<Record<string, number>>({});

@@ -3,6 +3,7 @@ import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router
 import { GatewayProvider } from "./contexts/GatewayContext";
 import Dashboard from "./pages/Dashboard";
 import DeviceControl from "./pages/DeviceControl";
+import TreadmillControl from "./pages/TreadmillControl";
 import DeviceManagement from "./pages/DeviceManagement";
 import Logs from "./pages/Logs";
 import NetworkConfig from "./pages/NetworkConfig";
@@ -38,6 +39,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/device-control" element={<DeviceControl />} />
+                  <Route path="/treadmill-control" element={<TreadmillControl />} />
                   <Route path="/device-management" element={<DeviceManagement />} />
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/network-config" element={<NetworkConfig />} />

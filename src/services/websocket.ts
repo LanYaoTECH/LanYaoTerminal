@@ -1,7 +1,7 @@
-import type { PumpStatus } from '../types/device';
+import type { DeviceStatus } from '../types/device';
 import { getGatewayWsUrl } from './api';
 
-type StatusCallback = (deviceId: string, data: PumpStatus) => void;
+type StatusCallback = (deviceId: string, data: DeviceStatus) => void;
 type ConnectionCallback = (deviceId: string, connected: boolean) => void;
 type GatewayStateCallback = (connected: boolean) => void;
 

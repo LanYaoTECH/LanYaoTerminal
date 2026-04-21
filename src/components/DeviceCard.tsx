@@ -5,7 +5,8 @@ import {
   Zap, 
   Power,
   Snowflake,
-  RotateCcw
+  RotateCcw,
+  Activity
 } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import DeviceSwitch from './DeviceSwitch';
@@ -13,13 +14,15 @@ import DeviceSwitch from './DeviceSwitch';
 interface DeviceData {
   id: string;
   name: string;
-  type: 'switch' | 'centrifuge' | 'pump' | 'refrigerator';
+  type: 'switch' | 'centrifuge' | 'pump' | 'refrigerator' | 'treadmill';
   status: 'online' | 'offline' | 'warning' | 'error';
   isOn: boolean;
   temperature?: number;
   humidity?: number;
   power?: number;
   speed?: number;
+  speedMps?: number;
+  distance?: number;
 }
 
 interface DeviceCardProps {
@@ -48,6 +51,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         return <Droplets className="w-6 h-6" />;
       case 'refrigerator':
         return <Snowflake className="w-6 h-6" />;
+      case 'treadmill':
+        return <Activity className="w-6 h-6" />;
       default:
         return <Power className="w-6 h-6" />;
     }
@@ -61,6 +66,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         return '注射泵';
       case 'refrigerator':
         return '冰箱';
+      case 'treadmill':
+        return '跑步机';
       default:
         return '智能开关';
     }
@@ -134,6 +141,26 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               <span className="text-sm text-muted-foreground">转速</span>
             </div>
             <span className="text-sm font-medium text-foreground">{device.speed} RPM</span>
+          </div>
+        )}
+
+        {device.speedMps !== undefined && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Activity className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">速度</span>
+            </div>
+            <span className="text-sm font-medium text-foreground">{device.speedMps.toFixed(2)} m/s</span>
+          </div>
+        )}
+
+        {device.distance !== undefined && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Activity className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">里程</span>
+            </div>
+            <span className="text-sm font-medium text-foreground">{device.distance.toFixed(1)} m</span>
           </div>
         )}
       </div>

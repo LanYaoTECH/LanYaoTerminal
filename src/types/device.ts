@@ -1,25 +1,27 @@
 // ===== Device Types =====
 
+export type DeviceType = 'pump' | 'treadmill';
+
 export interface Device {
   id: string;
   name: string;
-  type: 'pump';
+  type: DeviceType;
   ip: string;
   port: number;
   created_at: string;
   updated_at: string;
   connected?: boolean;
-  lastStatus?: PumpStatus | null;
+  lastStatus?: DeviceStatus | null;
 }
 
 export interface DeviceCreateInput {
   name: string;
-  type: 'pump';
+  type: DeviceType;
   ip: string;
   port?: number;
 }
 
-// ===== Motor & Pump Types =====
+// ===== Pump (injection pump) =====
 
 export interface MotorStatus {
   id: number;
@@ -33,8 +35,8 @@ export interface MotorStatus {
 }
 
 export interface KeyFrame {
-  t_ms: number;   // 时间（毫秒）
-  speed: number;  // 速度（RPM）
+  t_ms: number;
+  speed: number;
 }
 
 export interface PeriodStatus {
@@ -44,19 +46,57 @@ export interface PeriodStatus {
   speed_a: number;
   cycles_completed: number;
   elapsed_ms: number;
-  target_duration_ms: number;   // 0=无限
+  target_duration_ms: number;
   interpolated_speed: number;
-  active_keyframe: number;      // 当前处于第几个关键帧段（0-based）
+  active_keyframe: number;
   kf_count: number;
 }
 
 export interface PumpStatus {
   type: 'status';
+  device_type?: 'pump';
   uptime: number;
   wifi: boolean;
   mode: 'raw' | 'period';
   period?: PeriodStatus;
   motors: MotorStatus[];
+}
+
+// ===== Treadmill (小动物跑步机) =====
+
+export type TreadmillState = 'idle' | 'running' | 'paused' | 'estopped';
+
+export interface TreadmillSettings {
+  target_speed_mps: number;
+  fwd: boolean;
+  target_time_sec: number;
+}
+
+export interface TreadmillRuntime {
+  cur_speed_mps: number;
+  elapsed_sec: number;
+  distance_m: number;
+  target_distance_m: number;
+}
+
+export interface TreadmillStatus {
+  type: 'status';
+  device_type: 'treadmill';
+  uptime: number;
+  wifi: boolean;
+  state: TreadmillState;
+  settings: TreadmillSettings;
+  runtime: TreadmillRuntime;
+}
+
+export type DeviceStatus = PumpStatus | TreadmillStatus;
+
+export function isPumpStatus(s: DeviceStatus | null | undefined): s is PumpStatus {
+  return !!s && (s as PumpStatus).mode !== undefined && ((s as PumpStatus).device_type ?? 'pump') === 'pump';
+}
+
+export function isTreadmillStatus(s: DeviceStatus | null | undefined): s is TreadmillStatus {
+  return !!s && (s as TreadmillStatus).device_type === 'treadmill';
 }
 
 // ===== Log Types =====
@@ -107,4 +147,22 @@ export function formatUptime(ms: number): string {
   if (hours > 0) return `${hours}小时${minutes % 60}分`;
   if (minutes > 0) return `${minutes}分${seconds % 60}秒`;
   return `${seconds}秒`;
+}
+
+export const TreadmillStateMap: Record<TreadmillState, { label: string; color: 'online' | 'offline' | 'warning' | 'error' }> = {
+  idle:     { label: '空闲',   color: 'offline' },
+  running:  { label: '运行中', color: 'online' },
+  paused:   { label: '暂停',   color: 'warning' },
+  estopped: { label: '急停',   color: 'error' },
+};
+
+export function getDeviceTypeLabel(type: DeviceType): string {
+  return type === 'treadmill' ? '跑步机' : '注射泵';
+}
+
+export function formatSeconds(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
